@@ -1,0 +1,8 @@
+python-dotenv
+openai
+langchain-core
+langchain-openai
+langchain-text-splitters
+faiss-cpu
+numpy
+pymongo
