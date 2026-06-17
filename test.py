@@ -8,11 +8,13 @@ from vectordb.mongodb import mongodb
 import os
 from embedding.embedder import get_embedding
 from main import main
-from llm.llama_client import llama_clients
+from llm.llama_client import llama_clients, llama_test_semantic
 import json
 import faiss
 from rechieval.rechieval import rechieval_data_for_test, rechieval_data
 import pandas as pd
+from barh import barhs
+from statistics import mean
 
 def test_chunk(top_k):    # danh gia xem truy van chunk nhu nao
   chunk_predict = [] # du doan
@@ -53,28 +55,45 @@ def test_chunk(top_k):    # danh gia xem truy van chunk nhu nao
 
 def test_semantic(): # danh gia ve mat ngu nghia
   mycol = mongodb(address=os.getenv("MONGODB_URI"))
+  predict_model = [] # cau tra loi cua model
+  ground_true = [] # cau tra loi thuc te
   with open("ingestion/data_test.json", "r", encoding='utf-8') as f:
     data = json.load(f)
     data = data["data"]
+    dem = 0
+    all_scores = [] # diem so cho moi dau hieu trong file
+    name_signal = ['dau_hieu_{}'.format(i) for i in range(len(data))] # ten dau hieu
     for d in data:
       dau_hieu = d['dau_hieu'] # dau hieu cua nguoi benh
-      ghi_chu = d['ghi_chu'] # ghi chu ve benh
+      ghi_chu = d['ghi_chu'] # ghi chu ve benh - day la ghi chu that
 
-      print(dau_hieu)
-      print(ghi_chu)
+      ground_true.append(ghi_chu)
 
       q_vector = get_embedding(dau_hieu)
       response = rechieval_data(
             question_vector=q_vector,
             index_file=faiss.read_index("faiss.index"),
-            top_k=100,
+            top_k=10,
             mycol=mycol,   
             min_score=0.55,
       )
 
-      print(response)
-
-      break
+      
+      predict = llama_clients(response, "", dau_hieu)   # se danh gia theo ghi chu
+      # print(predict)
+      # print(dem)
+      # dem = dem + 1
+      predict_ghichu = predict['Ghi chú']
+      print(predict_ghichu)
+      review = llama_test_semantic(predict_ghichu, ghi_chu)
+      all_scores.append(int(review['score']))
+  #     predict_model.append(predict_ghichu)
+      # break
+  # print(predict_model)
+  # print(ground_true)
+  with open("report/avg_score.txt", "w", encoding="utf-8") as f:
+    f.write("điểm trung bình của qwen2.5:14b: {}".format(mean(all_scores)))
+  barhs(name_signal, all_scores)
 
 
 if __name__ == "__main__":

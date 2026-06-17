@@ -6,7 +6,7 @@ def mongodb(address):
     mycol = mydb["rag"]
     return mycol
 
-def save_data_mongodb(list_path_file):
+def save_data_mongodb(list_path_file, load_data, mycol, get_embedding):
     name_docs = []
     attentions = []
     content_table = []

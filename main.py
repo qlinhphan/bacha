@@ -23,7 +23,7 @@ def main():
 
     all_data_in_db = list(mycol.find())
     if len(all_data_in_db) == 0:
-        save_data_mongodb(list_path_file=list_path_file)
+        save_data_mongodb(list_path_file=list_path_file, load_data = load_data, mycol = mycol, get_embedding = get_embedding)
     else:
         print("didn't save knowledge into db")
     
@@ -46,7 +46,7 @@ def main():
         response = rechieval_data(
             question_vector=q_vector,
             index_file=file_index,
-            top_k=100,
+            top_k=10,
             mycol=mycol,   
             min_score=0.55,
         )

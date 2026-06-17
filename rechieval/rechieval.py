@@ -25,6 +25,7 @@ def rechieval_data(question_vector, index_file, top_k, mycol, min_score=0.6):
         data = list_data_db[fi]
         response.append(data['content'])
         name_docs.append(data['name_doc'])
+        # print("rechieval: ", response)
     return {
         "response": response
     }

@@ -2,26 +2,6 @@
 import requests
 import re
 import json
-def llama_clients(knowledge, context, q):
-    prompt = f"""
-        Bạn là trợ lý AI trong y tế, chuyên đưa ra các hướng điều trị cho bác sĩ dựa vào kiến thức được cung cấp. TUYỆT ĐỐI KHÔNG TRẢ LỜI CÁC CÂU HỎI NGOÀI PHẠM VI Y TẾ
-        Kiến thức: {knowledge} 
-        Lịch sử hội thoại: {context}
-        Câu hỏi: {q}
-        - Quy tắc trả lời:
-        1. Nói chuyện hoà đồng, Khi bác sĩ nói về tình trạng bệnh nhân THÌ PHẢI DỰA VÀO KIẾN THỨC ĐƯỢC CUNG CẤP ĐỂ TRẢ LỜI, Không trả lời các câu hỏi ngoài phạm vi y tế
-        2. Nếu không tìm thấy hướng điều trị phù hợp, hãy trả lời "Xin lỗi, tôi không tìm thấy hướng điều trị phù hợp dựa trên kiến thức hiện có."
-        3 Cuối cùng KHI ĐÃ TÌM ĐƯỢC HƯỚNG ĐIỀU TRỊ hãy trả lời theo 3 ý: PHƯƠNG PHÁP, GHI CHÚ VÀ LƯU Ý từ kiến thức bạn có
-    """
-    response = requests.post(
-        'http://10.10.61.29:11434/api/generate',
-        json={
-            'model': 'gemma2:9b',
-            'prompt': prompt,
-            'stream': False
-        }
-    )
-    return response.json()['response']
 
 def extract_json(text):
     # 1. Lấy phần nằm trong ```json ... ``` nếu có
@@ -43,6 +23,47 @@ def extract_json(text):
             "reason": "Invalid JSON",
             "raw": text
         }
+
+
+def llama_clients(knowledge, context, q):
+    prompt = f"""
+        Bạn là trợ lý AI trong lĩnh vực y tế, chuyên hỗ trợ bác sĩ đề xuất hướng điều trị dựa trên kiến thức được cung cấp.
+        Tuyệt đối không trả lời các câu hỏi ngoài phạm vi y tế.
+
+        Kiến thức được cung cấp:
+        {knowledge}
+
+        Lịch sử hội thoại:
+        {context}
+
+        Câu hỏi của bác sĩ:
+        {q}
+
+        [QUY TẮC ĐỊNH DẠNG ĐẦU RA - BẮT BUỘC ĐỌC KỸ]:
+        Bạn phải phân loại câu trả lời và xuất ra đúng định dạng tương ứng:
+        - Nếu hỏi danh tính ("Bạn là ai?"): "Tôi là trợ lý AI y tế hỗ trợ trích xuất phác đồ điều trị."
+        - Nếu không có kiến thức: "Xin lỗi, tôi không tìm thấy hướng điều trị phù hợp dựa trên kiến thức hiện có."
+        - TRONG TẤT CẢ CÁC TRƯỜNG HỢP CÒN LẠI (Khi bạn dùng {knowledge} để đưa ra đáp án, đề xuất, hoặc giải thích về y tế): BẠN BẮT BUỘC CHỈ ĐƯỢC XUẤT RA 1 KHỐI JSON DUY NHẤT. Tuyệt đối không thêm bất kỳ văn bản nào ngoài khối JSON này.
+        {{
+        "Phương pháp": "...",
+        "Ghi chú": "...",
+        "Lưu ý": "..."
+        }}
+    """
+    response = requests.post(
+        'http://10.10.61.29:11434/api/generate',
+        json={
+            'model': 'qwen2.5:14b',
+            'prompt': prompt,
+            'stream': False
+        }
+    )
+    res  = response.json()['response']
+    
+    if '{' in res and '}' in res:
+        return extract_json(res)
+    else:
+        return res
 
 def llama_test_semantic(answer, ground_truth):
     prompt = f"""
@@ -71,7 +92,7 @@ def llama_test_semantic(answer, ground_truth):
     response = requests.post(
         'http://10.10.61.29:11434/api/generate',
         json={
-            'model': 'gemma2:9b',
+            'model': 'qwen2.5:14b',
             'prompt': prompt,
 
             'stream': False
