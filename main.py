@@ -12,6 +12,8 @@ from prompts.prompt_temp import prompt_temp
 from llm.llm_client import llms
 from llm.llama_client import llama_clients
 from prompts.prompt_temp import prompt_temp
+from vectordb.postgre import create_table_postgre, init_postgre, save_data_into_postgre
+from llm.llama_client import llama_summary_conversation
 
 def main():
     # connect mg
@@ -38,10 +40,19 @@ def main():
     # search
     file_index = faiss.read_index("faiss.index")   
 
+    cursor = init_postgre()
+    create_table_postgre(cursor)
+    print("created postgre sucessfully")
+
     context = []
+    # i = 0
     while True:
+
+        # if i == 2: break
         
         q = input("Ban: ")
+        if q == "bye":
+            break;
         q_vector = get_embedding(q)
         response = rechieval_data(
             question_vector=q_vector,
@@ -52,9 +63,18 @@ def main():
         )
 
         res = llama_clients(response, context, q)
-        print(res)
-        context.append(res)
-        print("====================================================================")
+        context.append([q, res])
+        print("AI: ",res)
+        # print("====================================================================")
+        # i = i + 1 
+
+    summarize = llama_summary_conversation(context)
+    # print("SUMMARIZE FROM AI: ", summarize)
+
+    save_data_into_postgre(cursor = cursor, sessionId = "session-123", userId='user-123', content = summarize)
+
+
+
 
 
 if __name__ == "__main__":

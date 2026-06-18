@@ -63,11 +63,54 @@ def llama_clients(knowledge, context, q):
         }
     )
     res  = response.json()['response']
+
+    # print("=================================================================")
+    # print("HISTORY: ", context)
+    # print("=================================================================")
     
     if '{' in res and '}' in res:
         return extract_json(res)
     else:
         return res
+
+
+# tóm tắt cuộc hội thoại trong 1 phiên
+def llama_summary_conversation(context):
+    prompt = f"""
+        Bạn là trợ lý AI trong lĩnh vực y tế, Chuyên làm nhiệm vụ tóm tắt phiên hội thoại dựa vào context được cung cấp.
+
+        Lịch sử hội thoại:
+        {context}
+
+        [QUY TẮC ĐỊNH DẠNG ĐẦU RA - BẮT BUỘC ĐỌC KỸ]:
+        1. Không sử dụng chủ ngữ, vị ngữ, ngôi.
+        2. Chỉ tóm tắt đầy đủ ý nghĩa của triệu chứng bác sĩ đưa ra và câu trả lời
+        3. Cuối cùng xuất ra dạng text
+        
+    """
+    response = requests.post(
+        'http://10.10.61.29:11434/api/generate',
+        json={
+            'model': 'qwen2.5:14b',
+            'prompt': prompt,
+            'stream': False  
+        }
+    )
+    res  = response.json()['response']
+    return res
+
+    # print("=================================================================")
+    # print("HISTORY: ", context)
+    # print("=================================================================")
+    
+    # if '{' in res and '}' in res:
+    #     return extract_json(res)
+    # else:
+    #     return res
+
+
+
+
 
 def llama_test_semantic(answer, ground_truth):
     prompt = f"""

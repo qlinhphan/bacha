@@ -21,7 +21,7 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: supersecretpassword
       ME_CONFIG_MONGODB_URL: mongodb://admin:supersecretpassword@mongodb:27018/
-    depends_on:
+    depemongodb10
       - mongodb
 
 volumes:
